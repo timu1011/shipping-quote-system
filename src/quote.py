@@ -87,7 +87,7 @@ def ai_quote():
 @login_required
 def process_ai_query():
     query = request.form.get('query', '')
-      query_lower = query.lower()
+      query_lower = query.lower() # ← mis‑indented
 
     # 常見縮寫對應的港口代碼或名稱
     abbreviation_map = {
@@ -110,7 +110,7 @@ def process_ai_query():
     ports = Port.query.all()
     origin_port = None
     destination_port = None
-    +
+    +                      # ← invalid “+” line
     for port in ports:
         port_name_lc = port.name.lower()
         port_code_lc = port.code.lower()
@@ -123,7 +123,7 @@ def process_ai_query():
     # 提取可能的櫃型
     container_types = ContainerType.query.all()
     container_type = None
-    +
+    +                     # ← invalid “+” line
     for ct in container_types:
         ct_name_lc = ct.name.lower()
         ct_code_lc = ct.code.lower()
