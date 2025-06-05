@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Quote</title>
+</head>
+<body>
+    <h1>AI Quote Demo</h1>
+    <form id="book-form">
+        <label>起運港: <input type="text" id="origin" /></label><br>
+        <label>目的港: <input type="text" id="destination" /></label><br>
+        <label>櫃型: <input type="text" id="container_type" /></label><br>
+        <button type="button" id="book-btn">訂倉</button>
+    </form>
+    <div id="result"></div>
+
+<script>
+const btn = document.getElementById('book-btn');
+btn.addEventListener('click', () => {
+    const origin = document.getElementById('origin').value;
+    const destination = document.getElementById('destination').value;
+    const container_type = document.getElementById('container_type').value;
+    fetch('/quote/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ origin, destination, container_type })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('result').innerHTML = '已建立訂倉，編號: ' + data.booking_id +
+                ` <a href="/quote/${data.booking_id}/pdf" target="_blank">下載 PDF</a>`;
+        } else {
+            document.getElementById('result').innerText = data.message || '訂倉失敗';
+        }
+    });
+});
+</script>
+</body>
+</html>
