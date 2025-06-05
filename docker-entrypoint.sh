@@ -8,8 +8,8 @@ sleep 5
 # 初始化數據庫
 echo "初始化數據庫..."
 python -c "
-from app import app, db
-from models import User, Port, ContainerType
+from src.app import app, db
+from src.models import User, Port, ContainerType
 from flask_bcrypt import Bcrypt
 bcrypt = Bcrypt()
 
@@ -61,4 +61,4 @@ with app.app_context():
 
 # 啟動應用
 echo "啟動海運AI自動報價系統..."
-gunicorn --bind 0.0.0.0:5000 app:app
+gunicorn --bind 0.0.0.0:${PORT:-5000} src.app:app
