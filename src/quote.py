@@ -85,6 +85,21 @@ def ai_quote():
 @login_required
 def process_ai_query():
     query = request.form.get('query', '')
+      query_lower = query.lower()
+
+    # 常見縮寫對應的港口代碼或名稱
+    abbreviation_map = {
+        'shanghai': ['sha', '上海'],
+        'sha': ['sha', '上海'],
+        'los angeles': ['lax', '洛杉磯'],
+        'lax': ['lax', '洛杉磯'],
+        'kaohsiung': ['khh', '高雄'],
+        'kh': ['khh', '高雄'],
+    }
+
+    for abbr, reps in abbreviation_map.items():
+        if abbr in query_lower:
+            query_lower += ' ' + ' '.join(reps)
     
     # 這裡可以接入實際的AI處理邏輯
     # 目前使用簡單的關鍵詞匹配作為示例
@@ -93,20 +108,24 @@ def process_ai_query():
     ports = Port.query.all()
     origin_port = None
     destination_port = None
-    
+    +
     for port in ports:
-        if port.name in query or port.code in query:
-            if "從" + port.name in query or "自" + port.name in query or "起運港" + port.name in query:
+        port_name_lc = port.name.lower()
+        port_code_lc = port.code.lower()
+        if port_name_lc in query_lower or port_code_lc in query_lower:
+            if f"從{port.name}".lower() in query_lower or f"自{port.name}".lower() in query_lower or f"起運港{port.name}".lower() in query_lower:
                 origin_port = port
-            elif "到" + port.name in query or "至" + port.name in query or "目的港" + port.name in query:
+            elif f"到{port.name}".lower() in query_lower or f"至{port.name}".lower() in query_lower or f"目的港{port.name}".lower() in query_lower:
                 destination_port = port
     
     # 提取可能的櫃型
     container_types = ContainerType.query.all()
     container_type = None
-    
+    +
     for ct in container_types:
-        if ct.name in query or ct.code in query:
+        ct_name_lc = ct.name.lower()
+        ct_code_lc = ct.code.lower()
+        if ct_name_lc in query_lower or ct_code_lc in query_lower:
             container_type = ct
     
     # 如果找到了必要信息，查詢運費
