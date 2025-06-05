@@ -1,8 +1,10 @@
-from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
-from .models import Port, ContainerType, Route, BaseRate, VesselSchedule
+from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, send_file, session
+from .models import Port, ContainerType, Route, BaseRate, VesselSchedule, Booking
 from .auth import login_required
 from .app import db
 from datetime import datetime, timedelta
+import io
+from reportlab.pdfgen import canvas
 
 quote_bp = Blueprint('quote', __name__)
 
@@ -175,7 +177,66 @@ def process_ai_query():
                 </div>
                 """
                 return jsonify({'success': True, 'response': response})
-    
+
+@quote_bp.route('/book', methods=['POST'])
+@login_required
+def book():
+    """Create a booking from provided data"""
+    data = request.get_json() or request.form
+    origin = data.get('origin')
+    destination = data.get('destination')
+    container_type = data.get('container_type')
+    if not origin or not destination or not container_type:
+        return jsonify({'success': False, 'message': '缺少必要信息'}), 400
+
+    booking = Booking(
+        user_id=session.get('user_id'),
+        origin_port=origin,
+        destination_port=destination,
+        container_type=container_type
+    )
+    db.session.add(booking)
+    db.session.commit()
+    return jsonify({'success': True, 'booking_id': booking.id})
+
+@quote_bp.route('/<int:booking_id>/pdf')
+@login_required
+def booking_pdf(booking_id):
+    """Generate a simple PDF quote for the booking"""
+    booking = Booking.query.get_or_404(booking_id)
+
+    # 查找航線及運費資料
+    origin_port = Port.query.filter((Port.name == booking.origin_port) | (Port.code == booking.origin_port)).first()
+    destination_port = Port.query.filter((Port.name == booking.destination_port) | (Port.code == booking.destination_port)).first()
+    base_rate = None
+    schedule = None
+    if origin_port and destination_port:
+        route = Route.query.filter_by(origin_port_id=origin_port.id, destination_port_id=destination_port.id).first()
+        if route:
+            today = datetime.utcnow().date()
+            base_rate = BaseRate.query.filter(
+                BaseRate.route_id == route.id,
+                BaseRate.effective_date <= today,
+                (BaseRate.expiry_date >= today) | (BaseRate.expiry_date.is_(None))
+            ).order_by(BaseRate.effective_date.desc()).first()
+            schedule = VesselSchedule.query.filter_by(route_id=route.id).order_by(VesselSchedule.departure_date).first()
+
+    buffer = io.BytesIO()
+    p = canvas.Canvas(buffer)
+    p.drawString(50, 800, 'Booking Confirmation')
+    p.drawString(50, 780, f'Booking ID: {booking.id}')
+    p.drawString(50, 760, f'Origin: {booking.origin_port}')
+    p.drawString(50, 740, f'Destination: {booking.destination_port}')
+    p.drawString(50, 720, f'Container Type: {booking.container_type}')
+    if base_rate:
+        p.drawString(50, 700, f'Rate: {base_rate.price} {base_rate.currency}')
+    if schedule:
+        p.drawString(50, 680, f'Schedule: {schedule.vessel_name} {schedule.voyage} {schedule.departure_date}')
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+    return send_file(buffer, mimetype='application/pdf', as_attachment=True,
+                     download_name=f'quote_{booking.id}.pdf')    
     # 如果無法提取完整信息或找不到匹配的運費
     return jsonify({
         'success': True,
