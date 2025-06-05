@@ -1,5 +1,16 @@
 # Shipping Quote System
 
+This repository contains a simple Flask application used for generating shipping quotes.
+
+## Environment Variables
+
+The application requires the following environment variables:
+
+- `SECRET_KEY` – key used by Flask to secure sessions.
+- `JWT_SECRET_KEY` – secret used for signing JWT tokens.
+
+`docker-compose.yml` defines example values for local development.# Shipping Quote System
+
 This project provides a simple web interface for managing shipping rates and schedules.
 
 ## Prerequisites
