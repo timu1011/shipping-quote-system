@@ -13,7 +13,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 複製應用代碼
-COPY src/ .
+COPY src/ src/
 
 # 設置環境變量
 ENV FLASK_APP=app.py
