@@ -11,6 +11,8 @@ services:
       - FLASK_APP=app.py
       - FLASK_ENV=production
       - DATABASE_URL=sqlite:///shipping_quote.db
+      - SECRET_KEY=dev_key_for_testing
+      - JWT_SECRET_KEY=jwt_secret_key
     depends_on:
       - db
     restart: always
